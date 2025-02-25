@@ -1745,42 +1745,42 @@
             toggleLoading(true);
             try {
                 // Cargar datos de Motos
-                const motosResponse = await gapi.client.sheets.spreadsheets.values.get({
+                const motosResponse = await fetch.spreadsheets.values.get({
                     spreadsheetId: SHEET_ID,
                     range: MOTOS_RANGE
                 });
                 datosMotos = processSheetData(motosResponse);
                 
                 // Cargar datos de Servicio
-                const servicioResponse = await gapi.client.sheets.spreadsheets.values.get({
+                const servicioResponse = await fetch.spreadsheets.values.get({
                     spreadsheetId: SHEET_ID,
                     range: SERVICIO_RANGE
                 });
                 datosServicio = processSheetData(servicioResponse);
                 
                 // Cargar datos de Café-Bar
-                const cafeResponse = await gapi.client.sheets.spreadsheets.values.get({
+                const cafeResponse = await fetch.spreadsheets.values.get({
                     spreadsheetId: SHEET_ID,
                     range: CAFE_RANGE
                 });
                 datosCafe = processSheetData(cafeResponse);
                 
                 // Cargar datos de Marketing
-                const marketingResponse = await gapi.client.sheets.spreadsheets.values.get({
+                const marketingResponse = await fetch.spreadsheets.values.get({
                     spreadsheetId: SHEET_ID,
                     range: MARKETING_RANGE
                 });
                 datosMarketing = processSheetData(marketingResponse);
                 
                 // Cargar datos de Eventos
-                const eventosResponse = await gapi.client.sheets.spreadsheets.values.get({
+                const eventosResponse = await fetch.spreadsheets.values.get({
                     spreadsheetId: SHEET_ID,
                     range: EVENTOS_RANGE
                 });
                 datosEventos = processSheetData(eventosResponse);
                 
                 // Cargar datos de KPIs Generales
-                const kpisResponse = await gapi.client.sheets.spreadsheets.values.get({
+                const kpisResponse = await fetch.spreadsheets.values.get({
                     spreadsheetId: SHEET_ID,
                     range: KPIS_RANGE
                 });
