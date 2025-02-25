@@ -723,12 +723,10 @@
         </div>
     </div>
 
-    <!-- Google Sheets API --> 
-    
     <script>
         // Configuración de Google Sheets API
-        const SHEET_ID = '1pq3cGTuSx5Fd0sHEmdWzlUGiauUhYsYXuZoano_DLgA'; // ID de la hoja de cálculo proporcionada
-        const API_KEY = 'AIzaSyCykbBu7nGY6WcnL9iVWKFqAdjvIm_8b4o'; // API key proporcionada
+        const SHEET_ID = '1pq3cGTuSx5Fd0sHEmdWzlUGiauUhYsYXuZoano_DLgA'; // ID de la hoja de cálculo
+        const API_KEY = 'AIzaSyCykbBu7nGY6WcnL9iVWKFqAdjvIm_8b4o'; // API key
 
         // Rangos de datos en Google Sheets
         const MOTOS_RANGE = 'DatosVentas!A1:D12';
@@ -1201,9 +1199,43 @@
             });
         }
 
+        // Función para procesar datos de respuesta de la API
+        function processSheetData(response, headerIndex = 0) {
+            if (!response || !response.values || response.values.length <= headerIndex) {
+                console.error('Datos de hoja inválidos', response);
+                return [];
+            }
+            
+            const headers = response.values[headerIndex].map(h => h.toLowerCase());
+            const data = [];
+            
+            for (let i = headerIndex + 1; i < response.values.length; i++) {
+                const row = response.values[i];
+                if (row.length === 0) continue;
+                
+                const item = {};
+                headers.forEach((header, index) => {
+                    if (index < row.length) {
+                        if (header === 'mes') {
+                            item[header] = row[index];
+                        } else {
+                            // Convertir a número
+                            const value = parseFloat(row[index]) || 0;
+                            item[header] = value;
+                        }
+                    } else {
+                        item[header] = header === 'mes' ? '' : 0;
+                    }
+                });
+                data.push(item);
+            }
+            
+            return data;
+        }
+
         // Función para actualizar KPIs de Motos
         function updateMotosKPIs(datos) {
-            if (!datos || datos.length === 0) return;
+            if (!datos || datos.length === 0) return 0;
 
             const lastMonth = datos[datos.length - 1];
             
@@ -1271,7 +1303,7 @@
 
         // Función para actualizar KPIs de Servicio
         function updateServicioKPIs(datos) {
-            if (!datos || datos.length === 0) return;
+            if (!datos || datos.length === 0) return 0;
 
             const lastMonth = datos[datos.length - 1];
             
@@ -1339,7 +1371,7 @@
 
         // Función para actualizar KPIs de Café-Bar
         function updateCafeKPIs(datos) {
-            if (!datos || datos.length === 0) return;
+            if (!datos || datos.length === 0) return 0;
 
             const lastMonth = datos[datos.length - 1];
             
@@ -1407,7 +1439,7 @@
 
         // Función para actualizar KPIs de Marketing
         function updateMarketingKPIs(datos) {
-            if (!datos || datos.length === 0) return;
+            if (!datos || datos.length === 0) return 0;
 
             const lastMonth = datos[datos.length - 1];
             
@@ -1475,7 +1507,7 @@
 
         // Función para actualizar KPIs de Eventos
         function updateEventosKPIs(datos) {
-            if (!datos || datos.length === 0) return;
+            if (!datos || datos.length === 0) return 0;
 
             const lastMonth = datos[datos.length - 1];
             
@@ -1593,7 +1625,7 @@
             }
 
             // Actualizar gráfico de KPIs generales
-            if (kpisGeneralesChart && datosKPIs.length > 0) {
+            if (kpisGeneralesChart && datosMotos.length > 0) {
                 // Meses para el eje X
                 const meses = [...new Set(datosMotos.map(d => d.mes))];
                 
@@ -1692,132 +1724,6 @@
             kpisRadarChart.update();
         }
 
-        // Función para inicializar Google Sheets API
-        function initGoogleSheetsAPI() {
-            toggleLoading(true);
-            gapi.load('client', async () => {
-                try {
-                    await gapi.client.init({
-                        apiKey: API_KEY,
-                        discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
-                    });
-                    console.log('API de Google Sheets inicializada correctamente');
-                    fetch;
-                } catch (error) {
-                    console.error('Error al inicializar la API de Google Sheets:', error);
-                    toggleLoading(false);
-                    alert('Error al inicializar la API de Google Sheets: ' + error.message);
-                }
-            });
-        }
-
-        // Función para procesar datos de hojas
-        function processSheetData(response, headerRow = 0) {
-            if (!response || !response.result || !response.result.values || response.result.values.length <= headerRow) {
-                console.error('Datos de hoja inválidos', response);
-                return [];
-            }
-            
-            const headers = response.result.values[headerRow];
-            const data = [];
-            
-            for (let i = headerRow + 1; i < response.result.values.length; i++) {
-                const row = response.result.values[i];
-                if (row.length === 0) continue;
-                
-                const item = {};
-                headers.forEach((header, index) => {
-                    if (index < row.length) {
-                        item[header.toLowerCase()] = row[index];
-                    } else {
-                        item[header.toLowerCase()] = null;
-                    }
-                });
-                data.push(item);
-            }
-            
-            return data;
-        }
-
-        // Función para cargar todos los datos
-        async function fetch {
-            toggleLoading(true);
-            try {
-                // Cargar datos de Motos
-                const motosResponse = await fetch.spreadsheets.values.get({
-                    spreadsheetId: SHEET_ID,
-                    range: MOTOS_RANGE
-                });
-                datosMotos = processSheetData(motosResponse);
-                
-                // Cargar datos de Servicio
-                const servicioResponse = await fetch.spreadsheets.values.get({
-                    spreadsheetId: SHEET_ID,
-                    range: SERVICIO_RANGE
-                });
-                datosServicio = processSheetData(servicioResponse);
-                
-                // Cargar datos de Café-Bar
-                const cafeResponse = await fetch.spreadsheets.values.get({
-                    spreadsheetId: SHEET_ID,
-                    range: CAFE_RANGE
-                });
-                datosCafe = processSheetData(cafeResponse);
-                
-                // Cargar datos de Marketing
-                const marketingResponse = await fetch.spreadsheets.values.get({
-                    spreadsheetId: SHEET_ID,
-                    range: MARKETING_RANGE
-                });
-                datosMarketing = processSheetData(marketingResponse);
-                
-                // Cargar datos de Eventos
-                const eventosResponse = await fetch.spreadsheets.values.get({
-                    spreadsheetId: SHEET_ID,
-                    range: EVENTOS_RANGE
-                });
-                datosEventos = processSheetData(eventosResponse);
-                
-                // Cargar datos de KPIs Generales
-                const kpisResponse = await fetch.spreadsheets.values.get({
-                    spreadsheetId: SHEET_ID,
-                    range: KPIS_RANGE
-                });
-                datosKPIs = processSheetData(kpisResponse);
-                
-                console.log('Datos cargados correctamente', {
-                    datosMotos,
-                    datosServicio,
-                    datosCafe,
-                    datosMarketing,
-                    datosEventos,
-                    datosKPIs
-                });
-                
-                // Actualizar KPIs y gráficos
-                const motosPercent = updateMotosKPIs(datosMotos);
-                const servicioPercent = updateServicioKPIs(datosServicio);
-                const cafePercent = updateCafeKPIs(datosCafe);
-                const marketingPercent = updateMarketingKPIs(datosMarketing);
-                const eventosPercent = updateEventosKPIs(datosEventos);
-                
-                updateCharts();
-                updateKPIsRadarChart(motosPercent, servicioPercent, cafePercent, marketingPercent, eventosPercent);
-                
-                // Actualizar fecha de actualización
-                document.getElementById('lastUpdated').textContent = `Dashboard actualizado: ${new Date().toLocaleString('es-MX')}`;
-                
-                // Resaltar KPIs que necesitan atención
-                highlightKPIsNeedingAttention();
-                
-            } catch (error) {
-                console.error('Error al cargar los datos:', error);
-                alert('Error al cargar datos de Google Sheets: ' + (error.message || 'Error desconocido'));
-            } finally {
-                toggleLoading(false);
-            }
-        }
-
         // Función para resaltar KPIs que necesitan atención
         function highlightKPIsNeedingAttention() {
             // Obtener el último mes de datos
@@ -1910,6 +1816,118 @@
             }
         }
 
+      
+        // Función para cargar todos los datos
+        async function loadAllData() {
+            toggleLoading(true);
+            try {
+                // Usar fetch en lugar de gapi para cargar los datos
+                console.log("Cargando datos con fetch...");
+                
+                // Cargar datos de Motos
+                const motosUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${MOTOS_RANGE}?key=${API_KEY}`;
+                const motosResponse = await fetch(motosUrl);
+                if (!motosResponse.ok) {
+                    throw new Error(`Error al cargar datos de Motos: ${motosResponse.status}`);
+                }
+                const motosData = await motosResponse.json();
+                datosMotos = processSheetData(motosData);
+                
+                // Cargar datos de Servicio
+                const servicioUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SERVICIO_RANGE}?key=${API_KEY}`;
+                const servicioResponse = await fetch(servicioUrl);
+                if (!servicioResponse.ok) {
+                    throw new Error(`Error al cargar datos de Servicio: ${servicioResponse.status}`);
+                }
+                const servicioData = await servicioResponse.json();
+                datosServicio = processSheetData(servicioData);
+                
+                // Cargar datos de Café-Bar
+                const cafeUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${CAFE_RANGE}?key=${API_KEY}`;
+                const cafeResponse = await fetch(cafeUrl);
+                if (!cafeResponse.ok) {
+                    throw new Error(`Error al cargar datos de Café: ${cafeResponse.status}`);
+                }
+                const cafeData = await cafeResponse.json();
+                datosCafe = processSheetData(cafeData);
+                
+                // Cargar datos de Marketing
+                const marketingUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${MARKETING_RANGE}?key=${API_KEY}`;
+                const marketingResponse = await fetch(marketingUrl);
+                if (!marketingResponse.ok) {
+                    throw new Error(`Error al cargar datos de Marketing: ${marketingResponse.status}`);
+                }
+                const marketingData = await marketingResponse.json();
+                datosMarketing = processSheetData(marketingData);
+                
+                // Cargar datos de Eventos
+                const eventosUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${EVENTOS_RANGE}?key=${API_KEY}`;
+                const eventosResponse = await fetch(eventosUrl);
+                if (!eventosResponse.ok) {
+                    throw new Error(`Error al cargar datos de Eventos: ${eventosResponse.status}`);
+                }
+                const eventosData = await eventosResponse.json();
+                datosEventos = processSheetData(eventosData);
+                
+                // Intentar cargar KPIs generales (opcional)
+                try {
+                    const kpisUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${KPIS_RANGE}?key=${API_KEY}`;
+                    const kpisResponse = await fetch(kpisUrl);
+                    if (kpisResponse.ok) {
+                        const kpisData = await kpisResponse.json();
+                        datosKPIs = processSheetData(kpisData);
+                    }
+                } catch (error) {
+                    console.warn('No se pudieron cargar los KPIs generales:', error);
+                    // No lanzamos error para que el dashboard siga funcionando sin KPIs generales
+                }
+                
+                console.log('Datos cargados correctamente', {
+                    datosMotos,
+                    datosServicio,
+                    datosCafe,
+                    datosMarketing,
+                    datosEventos,
+                    datosKPIs
+                });
+                
+                // Actualizar KPIs y gráficos
+                const motosPercent = updateMotosKPIs(datosMotos);
+                const servicioPercent = updateServicioKPIs(datosServicio);
+                const cafePercent = updateCafeKPIs(datosCafe);
+                const marketingPercent = updateMarketingKPIs(datosMarketing);
+                const eventosPercent = updateEventosKPIs(datosEventos);
+                
+                updateCharts();
+                updateKPIsRadarChart(motosPercent, servicioPercent, cafePercent, marketingPercent, eventosPercent);
+                
+                // Actualizar fecha de actualización
+                document.getElementById('lastUpdated').textContent = `Dashboard actualizado: ${new Date().toLocaleString('es-MX')}`;
+                
+                // Resaltar KPIs que necesitan atención
+                highlightKPIsNeedingAttention();
+                
+            } catch (error) {
+                console.error('Error al cargar los datos:', error);
+                alert('Error al cargar datos: ' + error.message);
+                // Si hay error, generar datos de demostración
+                generateDemoData();
+                
+                const motosPercent = updateMotosKPIs(datosMotos);
+                const servicioPercent = updateServicioKPIs(datosServicio);
+                const cafePercent = updateCafeKPIs(datosCafe);
+                const marketingPercent = updateMarketingKPIs(datosMarketing);
+                const eventosPercent = updateEventosKPIs(datosEventos);
+                
+                updateCharts();
+                updateKPIsRadarChart(motosPercent, servicioPercent, cafePercent, marketingPercent, eventosPercent);
+                
+                document.getElementById('lastUpdated').textContent = `Dashboard actualizado: ${new Date().toLocaleString('es-MX')} (Datos de demostración)`;
+            } finally {
+                toggleLoading(false);
+            }
+        }
+
         // Función para generar datos de demostración (solo si no se pueden cargar datos reales)
         function generateDemoData() {
             console.log('Generando datos de demostración para prueba');
@@ -1981,16 +1999,18 @@
             
             // Configurar botón de actualizar
             document.getElementById('updateBtn').addEventListener('click', function() {
-                initGoogleSheetsAPI();
+                loadAllData();
             });
             
-            // Iniciar carga de datos desde Google Sheets
-            initGoogleSheetsAPI();
+            // Iniciar carga de datos
+            loadAllData();
             
-            // Si hay algún error en la carga, generar datos de demostración
+            // Si hay algún error en la carga y no hay datos después de 5 segundos, generar datos de demostración
             setTimeout(function() {
                 if (datosMotos.length === 0) {
+                    console.warn('No se recibieron datos de la API, generando datos de demostración');
                     generateDemoData();
+                    
                     const motosPercent = updateMotosKPIs(datosMotos);
                     const servicioPercent = updateServicioKPIs(datosServicio);
                     const cafePercent = updateCafeKPIs(datosCafe);
@@ -2000,12 +2020,10 @@
                     updateCharts();
                     updateKPIsRadarChart(motosPercent, servicioPercent, cafePercent, marketingPercent, eventosPercent);
                     
-                    document.getElementById('lastUpdated').textContent += ' (Datos de demostración)';
+                    document.getElementById('lastUpdated').textContent = `Dashboard actualizado: ${new Date().toLocaleString('es-MX')} (Datos de demostración)`;
                 }
-            }, 5000); // Esperar 5 segundos para ver si se cargan los datos reales
+            }, 8000); // Esperar 8 segundos para ver si se cargan los datos reales
         });
     </script>
 </body>
 </html>
-
-          
