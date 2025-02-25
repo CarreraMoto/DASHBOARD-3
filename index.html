@@ -1,0 +1,2012 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Carrera Moto - KPIs y Objetivos</title>
+    
+    <!-- Tailwind CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+        }
+        .progress-bar {
+            height: 10px;
+            border-radius: 5px;
+            background-color: #e0e0e0;
+        }
+        .progress-fill {
+            height: 100%;
+            border-radius: 5px;
+        }
+        .card {
+            background-color: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+        .metric-card {
+            display: flex;
+            flex-direction: column;
+            background-color: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+        .metric-value {
+            font-size: 1.875rem;
+            font-weight: bold;
+        }
+        .metric-target {
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+        .metric-target.positive {
+            color: #10b981;
+        }
+        .metric-target.negative {
+            color: #ef4444;
+        }
+        .chart-container {
+            width: 100%;
+            height: 250px;
+        }
+        .action-card {
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            border-left-width: 4px;
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            visibility: hidden;
+        }
+        .loading-spinner {
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Colores específicos para cada área */
+        .motos-color { color: #3b82f6; }
+        .motos-bg { background-color: #3b82f6; }
+        .motos-bg-light { background-color: #eff6ff; }
+        .motos-border { border-color: #3b82f6; }
+        
+        .servicio-color { color: #10b981; }
+        .servicio-bg { background-color: #10b981; }
+        .servicio-bg-light { background-color: #ecfdf5; }
+        .servicio-border { border-color: #10b981; }
+        
+        .cafe-color { color: #f59e0b; }
+        .cafe-bg { background-color: #f59e0b; }
+        .cafe-bg-light { background-color: #fffbeb; }
+        .cafe-border { border-color: #f59e0b; }
+        
+        .marketing-color { color: #8b5cf6; }
+        .marketing-bg { background-color: #8b5cf6; }
+        .marketing-bg-light { background-color: #f5f3ff; }
+        .marketing-border { border-color: #8b5cf6; }
+        
+        .eventos-color { color: #ec4899; }
+        .eventos-bg { background-color: #ec4899; }
+        .eventos-bg-light { background-color: #fdf2f8; }
+        .eventos-border { border-color: #ec4899; }
+
+        /* Estilos para tablas */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .data-table th, .data-table td {
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .data-table th {
+            background-color: #f8fafc;
+            font-weight: 600;
+        }
+        .data-table tr:hover {
+            background-color: #f1f5f9;
+        }
+
+        /* Animación para las tarjetas de KPI */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+            100% { transform: scale(1); }
+        }
+        .kpi-highlight {
+            animation: pulse 2s infinite;
+        }
+
+        /* Estilos para las pestañas */
+        .tab-button {
+            padding: 0.75rem 1.25rem;
+            font-weight: 600;
+            border-radius: 0.5rem 0.5rem 0 0;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .tab-content {
+            display: none;
+            padding: 1rem;
+            border-radius: 0 0.5rem 0.5rem 0.5rem;
+        }
+        .tab-active {
+            display: block;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 p-4 md:p-8">
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+    </div>
+    
+    <div class="max-w-7xl mx-auto">
+        <!-- Header con el propósito general -->
+        <div class="card bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold mb-2">
+                        Dashboard Carrera Moto
+                    </h1>
+                    <p class="text-lg italic">
+                        "Nos mueve la libertad, la autenticidad y los amigos. Queremos inspirar a una comunidad a vivir aventuras únicas, viendo, sintiendo, probando, oliendo y escuchando el mundo a través de una moto."
+                    </p>
+                </div>
+                <div class="mt-4 md:mt-0 flex items-center">
+                    <button id="updateBtn" class="mr-4 bg-white text-blue-600 hover:bg-blue-50 font-bold py-2 px-4 rounded transition">
+                        Actualizar Datos
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel de KPIs Generales -->
+        <h2 class="text-2xl font-bold text-gray-800 mt-8 mb-4">Resumen General de KPIs</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+            <!-- KPI Motos -->
+            <div class="metric-card motos-border border-t-4">
+                <div class="flex justify-between items-start">
+                    <h3 class="font-bold text-gray-700">Ventas Motos</h3>
+                    <span class="px-2 py-1 rounded-full text-xs motos-bg text-white">Demos</span>
+                </div>
+                <p id="kpi-demos" class="metric-value motos-color">0</p>
+                <p id="kpi-demos-target" class="metric-target positive">-</p>
+                <div class="progress-bar mt-2">
+                    <div id="kpi-demos-progress" class="progress-fill motos-bg" style="width: 0%"></div>
+                </div>
+            </div>
+            
+            <!-- KPI Servicio -->
+            <div class="metric-card servicio-border border-t-4">
+                <div class="flex justify-between items-start">
+                    <h3 class="font-bold text-gray-700">Servicio</h3>
+                    <span class="px-2 py-1 rounded-full text-xs servicio-bg text-white">CTA</span>
+                </div>
+                <p id="kpi-satisfaccion" class="metric-value servicio-color">0%</p>
+                <p id="kpi-satisfaccion-target" class="metric-target positive">-</p>
+                <div class="progress-bar mt-2">
+                    <div id="kpi-satisfaccion-progress" class="progress-fill servicio-bg" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- KPI Café-Bar -->
+            <div class="metric-card cafe-border border-t-4">
+                <div class="flex justify-between items-start">
+                    <h3 class="font-bold text-gray-700">Café-Bar</h3>
+                    <span class="px-2 py-1 rounded-full text-xs cafe-bg text-white">Visitas</span>
+                </div>
+                <p id="kpi-cafe-visitas" class="metric-value cafe-color">0</p>
+                <p id="kpi-cafe-target" class="metric-target positive">-</p>
+                <div class="progress-bar mt-2">
+                    <div id="kpi-cafe-progress" class="progress-fill cafe-bg" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- KPI Marketing -->
+            <div class="metric-card marketing-border border-t-4">
+                <div class="flex justify-between items-start">
+                    <h3 class="font-bold text-gray-700">Marketing</h3>
+                    <span class="px-2 py-1 rounded-full text-xs marketing-bg text-white">Leads</span>
+                </div>
+                <p id="kpi-leads" class="metric-value marketing-color">0</p>
+                <p id="kpi-leads-target" class="metric-target positive">-</p>
+                <div class="progress-bar mt-2">
+                    <div id="kpi-leads-progress" class="progress-fill marketing-bg" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- KPI Eventos -->
+            <div class="metric-card eventos-border border-t-4">
+                <div class="flex justify-between items-start">
+                    <h3 class="font-bold text-gray-700">Eventos</h3>
+                    <span class="px-2 py-1 rounded-full text-xs eventos-bg text-white">Total</span>
+                </div>
+                <p id="kpi-eventos" class="metric-value eventos-color">0</p>
+                <p id="kpi-eventos-target" class="metric-target positive">-</p>
+                <div class="progress-bar mt-2">
+                    <div id="kpi-eventos-progress" class="progress-fill eventos-bg" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel de KPIs Generales Mensuales -->
+        <div class="card">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Desempeño Mensual por Área</h2>
+            <div class="chart-container h-80">
+                <canvas id="kpisGeneralesChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Tabs para secciones de áreas -->
+        <div class="mt-8">
+            <div class="flex flex-wrap">
+                <button id="tab-motos" class="tab-button motos-bg text-white">Motos Nuevas</button>
+                <button id="tab-servicio" class="tab-button bg-gray-200 hover:bg-gray-300">Servicio</button>
+                <button id="tab-cafe" class="tab-button bg-gray-200 hover:bg-gray-300">Café-Bar</button>
+                <button id="tab-marketing" class="tab-button bg-gray-200 hover:bg-gray-300">Marketing</button>
+                <button id="tab-eventos" class="tab-button bg-gray-200 hover:bg-gray-300">Eventos</button>
+            </div>
+            
+            <!-- Contenido Motos Nuevas -->
+            <div id="content-motos" class="tab-content tab-active card motos-border border-t-4">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                        <div class="mb-6">
+                            <h2 class="text-xl font-bold motos-color mb-2">Visión 5 Años</h2>
+                            <p class="font-semibold">TRANSMITIR LA EXPERIENCIA DE VIVIR EL MOTOCICLISMO PURO</p>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <h2 class="text-xl font-bold motos-color mb-2">Objetivo 1 Año</h2>
+                            <p class="font-semibold">FORMAR PARTE DE LA VIDA DE 230 PERSONAS A TRAVÉS DE LAS MOTOS ADQUIRIDAS</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div class="bg-white p-4 rounded-lg shadow">
+                                <h3 class="text-sm font-semibold text-gray-500">Demos</h3>
+                                <div class="flex justify-between items-end mt-2">
+                                    <p id="motos-demos" class="text-2xl font-bold motos-color">0</p>
+                                    <p class="text-sm text-gray-500">Meta: <span id="motos-demos-meta">40</span></p>
+                                </div>
+                                <div class="progress-bar mt-2">
+                                    <div id="motos-demos-bar" class="progress-fill motos-bg" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white p-4 rounded-lg shadow">
+                                <h3 class="text-sm font-semibold text-gray-500">Solicitudes</h3>
+                                <div class="flex justify-between items-end mt-2">
+                                    <p id="motos-solicitudes" class="text-2xl font-bold motos-color">0</p>
+                                    <p class="text-sm text-gray-500">Meta: <span id="motos-solicitudes-meta">20</span></p>
+                                </div>
+                                <div class="progress-bar mt-2">
+                                    <div id="motos-solicitudes-bar" class="progress-fill motos-bg" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white p-4 rounded-lg shadow">
+                                <h3 class="text-sm font-semibold text-gray-500">Visitas</h3>
+                                <div class="flex justify-between items-end mt-2">
+                                    <p id="motos-visitas" class="text-2xl font-bold motos-color">0</p>
+                                    <p class="text-sm text-gray-500">Meta: <span id="motos-visitas-meta">60</span></p>
+                                </div>
+                                <div class="progress-bar mt-2">
+                                    <div id="motos-visitas-bar" class="progress-fill motos-bg" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h2 class="text-xl font-bold motos-color mb-4">Tendencia Mensual</h2>
+                        <div class="chart-container">
+                            <canvas id="motosChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-6">
+                    <h3 class="text-lg font-bold motos-color mb-3">Datos Mensuales</h3>
+                    <div class="overflow-x-auto">
+                        <table id="motosTable" class="data-table w-full">
+                            <thead>
+                                <tr>
+                                    <th>Mes</th>
+                                    <th>Demos</th>
+                                    <th>Solicitudes</th>
+                                    <th>Visitas</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Datos de tabla serán llenados dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Contenido Servicio -->
+            <div id="content-servicio" class="tab-content card servicio-border border-t-4">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                        <div class="mb-6">
+                            <h2 class="text-xl font-bold servicio-color mb-2">Visión 5 Años</h2>
+                            <p class="font-semibold">SER PARA EL MUNDO DEL MOTOCICLISMO LA MEJOR OPCIÓN Y EL MEJOR ALIADO QUE PUEDAN DESEAR PARA DISFRUTAR LA EXPERIENCIA EN SU MOTO</p>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <h2 class="text-xl font-bold servicio-color mb-2">Objetivo 1 Año</h2>
+                            <p class="font-semibold">QUE NUESTROS 70 CLIENTES MENSUALES CUMPLAN CON EL "CTA" (Calidad, tiempo y atención) PARA GARANTIZAR LA SATISFACCIÓN EN EL SERVICIO</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div class="bg-white p-4 rounded-lg shadow">
+                                <h3 class="text-sm font-semibold text-gray-500">Servicios</h3>
+                                <div class="flex justify-between items-end mt-2">
+                                    <p id="servicio-realizados" class="text-2xl font-bold servicio-color">0</p>
+                                    <p class="text-sm text-gray-500">Meta: <span id="servicio-realizados-meta">70</span></p>
+                                </div>
+                                <div class="progress-bar mt-2">
+                                    <div id="servicio-realizados-bar" class="progress-fill servicio-bg" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white p-4 rounded-lg shadow">
+                                <h3 class="text-sm font-semibold text-gray-500">Satisfacción</h3>
+                                <div class="flex justify-between items-end mt-2">
+                                    <p id="servicio-satisfaccion" class="text-2xl font-bold servicio-color">0%</p>
+                                    <p class="text-sm text-gray-500">Meta: <span id="servicio-satisfaccion-meta">95%</span></p>
+                                </div>
+                                <div class="progress-bar mt-2">
+                                    <div id="servicio-satisfaccion-bar" class="progress-fill servicio-bg" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white p-4 rounded-lg shadow">
+                                <h3 class="text-sm font-semibold text-gray-500">Reseñas 5★</h3>
+                                <div class="flex justify-between items-end mt-2">
+                                    <p id="servicio-resenas" class="text-2xl font-bold servicio-color">0</p>
+                                    <p class="text-sm text-gray-500">Meta: <span id="servicio-resenas-meta">4</span></p>
+                                </div>
+                                <div class="progress-bar mt-2">
+                                    <div id="servicio-resenas-bar" class="progress-fill servicio-bg" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h2 class="text-xl font-bold servicio-color mb-4">Tendencia Mensual</h2>
+                        <div class="chart-container">
+                            <canvas id="servicioChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-6">
+                    <h3 class="text-lg font-bold servicio-color mb-3">Datos Mensuales</h3>
+                    <div class="overflow-x-auto">
+                        <table id="servicioTable" class="data-table w-full">
+                            <thead>
+                                <tr>
+                                    <th>Mes</th>
+                                    <th>Servicios</th>
+                                    <th>Satisfacción</th>
+                                    <th>Reseñas 5★</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Datos de tabla serán llenados dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Contenido Café-Bar -->
+            <div id="content-cafe" class="tab-content card cafe-border border-t-4">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                        <div class="mb-6">
+                            <h2 class="text-xl font-bold cafe-color mb-2">Visión 5 Años</h2>
+                            <p class="font-semibold">CONSTRUIR UNA COMUNIDAD VIBRANTE QUE COMBINE LA PASIÓN POR EL CAFÉ, LA CERVEZA Y LAS MOTOS. OFRECIENDO UNA EXPERIENCIA ÚNICA Y MEMORABLE LLENA DE LIBERTAD Y DE AVENTURA</p>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <h2 class="text-xl font-bold cafe-color mb-2">Objetivo 1 Año</h2>
+                            <p class="font-semibold">DARLE UNA EXPERIENCIA MEMORABLE A 700 CLIENTES POR MES, Y GENERAR UN TICKET PROMEDIO DE $185 POR PERSONA</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div class="bg-white p-4 rounded-lg shadow">
+                                <h3 class="text-sm font-semibold text-gray-500">Visitas</h3>
+                                <div class="flex justify-between items-end mt-2">
+                                    <p id="cafe-visitas" class="text-2xl font-bold cafe-color">0</p>
+                                    <p class="text-sm text-gray-500">Meta: <span id="cafe-visitas-meta">700</span></p>
+                                </div>
+                                <div class="progress-bar mt-2">
+                                    <div id="cafe-visitas-bar" class="progress-fill cafe-bg" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white p-4 rounded-lg shadow">
+                                <h3 class="text-sm font-semibold text-gray-500">Ticket Promedio</h3>
+                                <div class="flex justify-between items-end mt-2">
+                                    <p id="cafe-ticket" class="text-2xl font-bold cafe-color">$0</p>
+                                    <p class="text-sm text-gray-500">Meta: <span id="cafe-ticket-meta">$185</span></p>
+                                </div>
+                                <div class="progress-bar mt-2">
+                                    <div id="cafe-ticket-bar" class="progress-fill cafe-bg" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white p-4 rounded-lg shadow">
+                                <h3 class="text-sm font-semibold text-gray-500">Reseñas 5★</h3>
+                                <div class="flex justify-between items-end mt-2">
+                                    <p id="cafe-resenas" class="text-2xl font-bold cafe-color">0</p>
+                                    <p class="text-sm text-gray-500">Meta: <span id="cafe-resenas-meta">4</span></p>
+                                </div>
+                                <div class="progress-bar mt-2">
+                                    <div id="cafe-resenas-bar" class="progress-fill cafe-bg" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h2 class="text-xl font-bold cafe-color mb-4">Tendencia Mensual</h2>
+                        <div class="chart-container">
+                            <canvas id="cafeChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-6">
+                    <h3 class="text-lg font-bold cafe-color mb-3">Datos Mensuales</h3>
+                    <div class="overflow-x-auto">
+                        <table id="cafeTable" class="data-table w-full">
+                            <thead>
+                                <tr>
+                                    <th>Mes</th>
+                                    <th>Visitas</th>
+                                    <th>Ticket Promedio</th>
+                                    <th>Reseñas 5★</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Datos de tabla serán llenados dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Contenido Marketing -->
+            <div id="content-marketing" class="tab-content card marketing-border border-t-4">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                        <div class="mb-6">
+                            <h2 class="text-xl font-bold marketing-color mb-2">Visión 5 Años</h2>
+                            <p class="font-semibold">GENERAR UN IMPACTO POSITIVO EN MILES DE MOTOCICLISTAS, A TRAVÉS DE CONTENIDO DE ALTO VALOR, QUE GENERE UNA CULTURA DE MOTOCICLISMO PASIONAL Y SEGURO</p>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <h2 class="text-xl font-bold marketing-color mb-2">Objetivo 1 Año</h2>
+                            <p class="font-semibold">CRECER NUESTRA AUDIENCIA PARA TENER MÁS IMPACTO Y HABLARLE POR LO MENOS A 7,000 PERSONAS, ADEMÁS DE GENERAR LEADS PARA NUESTRO EMBUDO DE VENTAS</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div class="bg-white p-4 rounded-lg shadow">
+                                <h3 class="text-sm font-semibold text-gray-500">Crecimiento</h3>
+                                <div class="flex justify-between items-end mt-2">
+                                    <p id="marketing-crecimiento" class="text-2xl font-bold marketing-color">0%</p>
+                                    <p class="text-sm text-gray-500">Meta: <span id="marketing-crecimiento-meta">5%</span></p>
+                                </div>
+                                <div class="progress-bar mt-2">
+                                    <div id="marketing-crecimiento-bar" class="progress-fill marketing-bg" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white p-4 rounded-lg shadow">
+                                <h3 class="text-sm font-semibold text-gray-500">Leads</h3>
+                                <div class="flex justify-between items-end mt-2">
+                                    <p id="marketing-leads" class="text-2xl font-bold marketing-color">0</p>
+                                    <p class="text-sm text-gray-500">Meta: <span id="marketing-leads-meta">90</span></p>
+                                </div>
+                                <div class="progress-bar mt-2">
+                                    <div id="marketing-leads-bar" class="progress-fill marketing-bg" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white p-4 rounded-lg shadow">
+                                <h3 class="text-sm font-semibold text-gray-500">Conversión</h3>
+                                <div class="flex justify-between items-end mt-2">
+                                    <p id="marketing-conversion" class="text-2xl font-bold marketing-color">0%</p>
+                                    <p class="text-sm text-gray-500">Meta: <span id="marketing-conversion-meta">2%</span></p>
+                                </div>
+                                <div class="progress-bar mt-2">
+                                    <div id="marketing-conversion-bar" class="progress-fill marketing-bg" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h2 class="text-xl font-bold marketing-color mb-4">Tendencia Mensual</h2>
+                        <div class="chart-container">
+                            <canvas id="marketingChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-6">
+                    <h3 class="text-lg font-bold marketing-color mb-3">Datos Mensuales</h3>
+                    <div class="overflow-x-auto">
+                        <table id="marketingTable" class="data-table w-full">
+                            <thead>
+                                <tr>
+                                    <th>Mes</th>
+                                    <th>Crecimiento (%)</th>
+                                    <th>Leads</th>
+                                    <th>Conversión (%)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Datos de tabla serán llenados dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Contenido Eventos -->
+            <div id="content-eventos" class="tab-content card eventos-border border-t-4">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                        <div class="mb-6">
+                            <h2 class="text-xl font-bold eventos-color mb-2">Visión 5 Años</h2>
+                            <p class="font-semibold">COMPARTIR NUESTRA FILOSOFÍA DE VIDA, A TRAVÉS DE EVENTOS EN LOS QUE NUESTRA MARCA, CARRERA MOTO SE PUEDA EXPRESAR</p>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <h2 class="text-xl font-bold eventos-color mb-2">Objetivo 1 Año</h2>
+                            <p class="font-semibold">TENER UNA CADENCIA DE EVENTOS QUE GENEREN CONFIABILIDAD Y CERCANÍA CON LA COMUNIDAD</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div class="bg-white p-4 rounded-lg shadow">
+                                <h3 class="text-sm font-semibold text-gray-500">Música en vivo</h3>
+                                <div class="flex justify-between items-end mt-2">
+                                    <p id="eventos-musica" class="text-2xl font-bold eventos-color">0</p>
+                                    <p class="text-sm text-gray-500">Meta: <span id="eventos-musica-meta">4</span></p>
+                                </div>
+                                <div class="progress-bar mt-2">
+                                    <div id="eventos-musica-bar" class="progress-fill eventos-bg" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white p-4 rounded-lg shadow">
+                                <h3 class="text-sm font-semibold text-gray-500">Comunidad</h3>
+                                <div class="flex justify-between items-end mt-2">
+                                    <p id="eventos-comunidad" class="text-2xl font-bold eventos-color">0</p>
+                                    <p class="text-sm text-gray-500">Meta: <span id="eventos-comunidad-meta">2</span></p>
+                                </div>
+                                <div class="progress-bar mt-2">
+                                    <div id="eventos-comunidad-bar" class="progress-fill eventos-bg" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white p-4 rounded-lg shadow">
+                                <h3 class="text-sm font-semibold text-gray-500">De paga</h3>
+                                <div class="flex justify-between items-end mt-2">
+                                    <p id="eventos-paga" class="text-2xl font-bold eventos-color">0</p>
+                                    <p class="text-sm text-gray-500">Meta: <span id="eventos-paga-meta">1</span></p>
+                                </div>
+                                <div class="progress-bar mt-2">
+                                    <div id="eventos-paga-bar" class="progress-fill eventos-bg" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h2 class="text-xl font-bold eventos-color mb-4">Tendencia Mensual</h2>
+                        <div class="chart-container">
+                            <canvas id="eventosChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-6">
+                    <h3 class="text-lg font-bold eventos-color mb-3">Datos Mensuales</h3>
+                    <div class="overflow-x-auto">
+                        <table id="eventosTable" class="data-table w-full">
+                            <thead>
+                                <tr>
+                                    <th>Mes</th>
+                                    <th>Música en vivo</th>
+                                    <th>Comunidad</th>
+                                    <th>De paga</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Datos de tabla serán llenados dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección de KPIs generales -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 my-8">
+            <div class="card">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">Indicadores Clave (KPIs Generales)</h2>
+                <div class="chart-container">
+                    <canvas id="kpisRadarChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">Acciones Recomendadas</h2>
+                <div class="space-y-4">
+                    <div class="action-card" style="border-left-color: #3b82f6; background-color: #eff6ff;">
+                        <h3 class="font-bold" style="color: #1e40af;">Motos Nuevas</h3>
+                        <p id="accion-motos" style="color: #1e3a8a;">Acción recomendada para Motos Nuevas</p>
+                    </div>
+                    <div class="action-card" style="border-left-color: #10b981; background-color: #ecfdf5;">
+                        <h3 class="font-bold" style="color: #065f46;">Servicio</h3>
+                        <p id="accion-servicio" style="color: #064e3b;">Acción recomendada para Servicio</p>
+                    </div>
+                    <div class="action-card" style="border-left-color: #f59e0b; background-color: #fffbeb;">
+                        <h3 class="font-bold" style="color: #92400e;">Café-Bar</h3>
+                        <p id="accion-cafe" style="color: #78350f;">Acción recomendada para Café-Bar</p>
+                    </div>
+                    <div class="action-card" style="border-left-color: #8b5cf6; background-color: #f5f3ff;">
+                        <h3 class="font-bold" style="color: #5b21b6;">Marketing</h3>
+                        <p id="accion-marketing" style="color: #4c1d95;">Acción recomendada para Marketing</p>
+                    </div>
+                    <div class="action-card" style="border-left-color: #ec4899; background-color: #fdf2f8;">
+                        <h3 class="font-bold" style="color: #9d174d;">Eventos</h3>
+                        <p id="accion-eventos" style="color: #831843;">Acción recomendada para Eventos</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="card text-center text-gray-600">
+            <p id="lastUpdated">Dashboard actualizado: 24 de febrero de 2025</p>
+            <p class="text-sm mt-1 italic">Carrera Moto — Inspirando aventuras a través de motocicletas</p>
+        </div>
+    </div>
+
+    <!-- Google Sheets API -->
+    <script src="https://apis.google.com/js/api.js"></script>
+    
+    <script>
+        // Configuración de Google Sheets API
+        const SHEET_ID = '1pq3cGTuSx5Fd0sHEmdWzlUGiauUhYsYXuZoano_DLgA'; // ID de la hoja de cálculo proporcionada
+        const API_KEY = 'AIzaSyCzTD0IHWvouHtC5PIIhrdd-9WY24QWK5Y'; // API key proporcionada
+
+        // Rangos de datos en Google Sheets
+        const MOTOS_RANGE = 'DatosVentas!A1:D12';
+        const SERVICIO_RANGE = 'DatosServicio!A1:D12';
+        const CAFE_RANGE = 'DatosCafe-Bar!A1:D12';
+        const MARKETING_RANGE = 'DatosMarketing!A1:D12';
+        const EVENTOS_RANGE = 'DatosEventos!A1:D12';
+        const KPIS_RANGE = 'KPIs Generales!A1:F12';
+
+        // Variables para almacenar los datos
+        let datosMotos = [];
+        let datosServicio = [];
+        let datosCafe = [];
+        let datosMarketing = [];
+        let datosEventos = [];
+        let datosKPIs = [];
+
+        // Variables para almacenar las instancias de Chart.js
+        let motosChart;
+        let servicioChart;
+        let cafeChart;
+        let marketingChart;
+        let eventosChart;
+        let kpisGeneralesChart;
+        let kpisRadarChart;
+
+        // Función para mostrar/ocultar indicador de carga
+        function toggleLoading(show) {
+            const overlay = document.getElementById('loading-overlay');
+            if (overlay) {
+                overlay.style.visibility = show ? 'visible' : 'hidden';
+            }
+        }
+
+        // Función para cambiar entre pestañas
+        function setupTabs() {
+            const tabs = ['motos', 'servicio', 'cafe', 'marketing', 'eventos'];
+            
+            tabs.forEach(tab => {
+                const tabButton = document.getElementById(`tab-${tab}`);
+                const tabContent = document.getElementById(`content-${tab}`);
+                
+                tabButton.addEventListener('click', () => {
+                    // Ocultar todos los contenidos
+                    tabs.forEach(t => {
+                        document.getElementById(`content-${t}`).classList.remove('tab-active');
+                        document.getElementById(`tab-${t}`).classList.remove('motos-bg', 'servicio-bg', 'cafe-bg', 'marketing-bg', 'eventos-bg');
+                        document.getElementById(`tab-${t}`).classList.add('bg-gray-200');
+                        document.getElementById(`tab-${t}`).classList.remove('text-white');
+                    });
+                    
+                    // Mostrar contenido actual
+                    tabContent.classList.add('tab-active');
+                    
+                    // Cambiar estilo del botón activo
+                    tabButton.classList.remove('bg-gray-200');
+                    tabButton.classList.add(`${tab}-bg`, 'text-white');
+                });
+            });
+        }
+
+        // Función para inicializar los gráficos
+        function initCharts() {
+            // Gráfico de motos
+            const motosCtx = document.getElementById('motosChart').getContext('2d');
+            motosChart = new Chart(motosCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Demos',
+                            data: [],
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                            tension: 0.1,
+                            fill: false
+                        },
+                        {
+                            label: 'Solicitudes',
+                            data: [],
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                            tension: 0.1,
+                            fill: false
+                        },
+                        {
+                            label: 'Visitas',
+                            data: [],
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                            tension: 0.1,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Gráfico de servicio
+            const servicioCtx = document.getElementById('servicioChart').getContext('2d');
+            servicioChart = new Chart(servicioCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Servicios',
+                            data: [],
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                            tension: 0.1,
+                            fill: false
+                        },
+                        {
+                            label: 'Satisfacción (%)',
+                            data: [],
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                            tension: 0.1,
+                            fill: false,
+                            yAxisID: 'y1'
+                        },
+                        {
+                            label: 'Reseñas 5★',
+                            data: [],
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                            tension: 0.1,
+                            fill: false,
+                            yAxisID: 'y'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Servicios / Reseñas'
+                            }
+                        },
+                        y1: {
+                            beginAtZero: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Satisfacción (%)'
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            },
+                            min: 0,
+                            max: 100
+                        }
+                    }
+                }
+            });
+
+            // Gráfico de café-bar
+            const cafeCtx = document.getElementById('cafeChart').getContext('2d');
+            cafeChart = new Chart(cafeCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Visitas',
+                            data: [],
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                            tension: 0.1,
+                            fill: false
+                        },
+                        {
+                            label: 'Ticket Promedio',
+                            data: [],
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                            tension: 0.1,
+                            fill: false,
+                            yAxisID: 'y1'
+                        },
+                        {
+                            label: 'Reseñas 5★',
+                            data: [],
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                            tension: 0.1,
+                            fill: false,
+                            yAxisID: 'y2'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Visitas'
+                            }
+                        },
+                        y1: {
+                            beginAtZero: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Ticket Promedio'
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        },
+                        y2: {
+                            beginAtZero: true,
+                            display: false
+                        }
+                    }
+                }
+            });
+
+            // Gráfico de marketing
+            const marketingCtx = document.getElementById('marketingChart').getContext('2d');
+            marketingChart = new Chart(marketingCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Crecimiento (%)',
+                            data: [],
+                            borderColor: '#8b5cf6',
+                            backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                            tension: 0.1,
+                            fill: false,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Leads',
+                            data: [],
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                            tension: 0.1,
+                            fill: false,
+                            yAxisID: 'y1'
+                        },
+                        {
+                            label: 'Conversión (%)',
+                            data: [],
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                            tension: 0.1,
+                            fill: false,
+                            yAxisID: 'y'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Porcentaje (%)'
+                            }
+                        },
+                        y1: {
+                            beginAtZero: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Leads'
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Gráfico de eventos
+            const eventosCtx = document.getElementById('eventosChart').getContext('2d');
+            eventosChart = new Chart(eventosCtx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Música en vivo',
+                            data: [],
+                            backgroundColor: 'rgba(236, 72, 153, 0.7)',
+                            borderColor: 'rgba(236, 72, 153, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Comunidad',
+                            data: [],
+                            backgroundColor: 'rgba(124, 58, 237, 0.7)',
+                            borderColor: 'rgba(124, 58, 237, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'De paga',
+                            data: [],
+                            backgroundColor: 'rgba(6, 182, 212, 0.7)',
+                            borderColor: 'rgba(6, 182, 212, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Gráfico de KPIs generales
+            const kpisGeneralesCtx = document.getElementById('kpisGeneralesChart').getContext('2d');
+            kpisGeneralesChart = new Chart(kpisGeneralesCtx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Motos',
+                            data: [],
+                            backgroundColor: 'rgba(59, 130, 246, 0.7)'
+                        },
+                        {
+                            label: 'Servicio',
+                            data: [],
+                            backgroundColor: 'rgba(16, 185, 129, 0.7)'
+                        },
+                        {
+                            label: 'Café-Bar',
+                            data: [],
+                            backgroundColor: 'rgba(245, 158, 11, 0.7)'
+                        },
+                        {
+                            label: 'Marketing',
+                            data: [],
+                            backgroundColor: 'rgba(139, 92, 246, 0.7)'
+                        },
+                        {
+                            label: 'Eventos',
+                            data: [],
+                            backgroundColor: 'rgba(236, 72, 153, 0.7)'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Porcentaje de Cumplimiento (%)'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Gráfico de radar para KPIs
+            const kpisRadarCtx = document.getElementById('kpisRadarChart').getContext('2d');
+            kpisRadarChart = new Chart(kpisRadarCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['Motos', 'Servicio', 'Café-Bar', 'Marketing', 'Eventos'],
+                    datasets: [{
+                        label: 'Porcentaje de Cumplimiento',
+                        data: [0, 0, 0, 0, 0],
+                        backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                        borderColor: 'rgba(79, 70, 229, 1)',
+                        pointBackgroundColor: 'rgba(79, 70, 229, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(79, 70, 229, 1)'
+                    },
+                    {
+                        label: 'Meta',
+                        data: [100, 100, 100, 100, 100],
+                        backgroundColor: 'rgba(209, 213, 219, 0.2)',
+                        borderColor: 'rgba(156, 163, 175, 1)',
+                        pointBackgroundColor: 'rgba(156, 163, 175, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(156, 163, 175, 1)',
+                        borderDash: [5, 5]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    elements: {
+                        line: {
+                            borderWidth: 3
+                        }
+                    },
+                    scales: {
+                        r: {
+                            angleLines: {
+                                display: true
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 100
+                        }
+                    }
+                }
+            });
+        }
+
+        // Función para actualizar KPIs de Motos
+        function updateMotosKPIs(datos) {
+            if (!datos || datos.length === 0) return;
+
+            const lastMonth = datos[datos.length - 1];
+            
+            const demos = parseInt(lastMonth.demos || 0);
+            const demosTarget = 40;
+            const demosPercent = demos / demosTarget * 100;
+            
+            const solicitudes = parseInt(lastMonth.solicitudes || 0);
+            const solicitudesTarget = 20;
+            const solicitudesPercent = solicitudes / solicitudesTarget * 100;
+            
+            const visitas = parseInt(lastMonth.visitas || 0);
+            const visitasTarget = 60;
+            const visitasPercent = visitas / visitasTarget * 100;
+
+            // Actualizar valores y barras de progreso
+            document.getElementById('motos-demos').textContent = demos;
+            document.getElementById('motos-demos-meta').textContent = demosTarget;
+            document.getElementById('motos-demos-bar').style.width = `${Math.min(demosPercent, 100)}%`;
+
+            document.getElementById('motos-solicitudes').textContent = solicitudes;
+            document.getElementById('motos-solicitudes-meta').textContent = solicitudesTarget;
+            document.getElementById('motos-solicitudes-bar').style.width = `${Math.min(solicitudesPercent, 100)}%`;
+
+            document.getElementById('motos-visitas').textContent = visitas;
+            document.getElementById('motos-visitas-meta').textContent = visitasTarget;
+            document.getElementById('motos-visitas-bar').style.width = `${Math.min(visitasPercent, 100)}%`;
+
+            // Actualizar KPI general
+            document.getElementById('kpi-demos').textContent = demos;
+            const demosTargetText = demos >= demosTarget ? '+' + (demos - demosTarget) : (demos - demosTarget);
+            document.getElementById('kpi-demos-target').textContent = `${demosTargetText} vs objetivo`;
+            document.getElementById('kpi-demos-target').className = `metric-target ${demos >= demosTarget ? 'positive' : 'negative'}`;
+            document.getElementById('kpi-demos-progress').style.width = `${Math.min(demosPercent, 100)}%`;
+
+            // Actualizar tabla de datos
+            const tbody = document.getElementById('motosTable').querySelector('tbody');
+            tbody.innerHTML = '';
+            datos.forEach(d => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${d.mes}</td>
+                    <td>${d.demos}</td>
+                    <td>${d.solicitudes}</td>
+                    <td>${d.visitas}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            // Generar recomendación
+            let accion = '';
+            if (demos < demosTarget) {
+                accion = 'Incrementar actividades de demostración para alcanzar el objetivo mensual.';
+            } else if (solicitudes < solicitudesTarget) {
+                accion = 'Mejorar el proceso de conversión de demos a solicitudes autorizadas.';
+            } else if (visitas < visitasTarget) {
+                accion = 'Aumentar el seguimiento a clientes potenciales para incrementar visitas contables.';
+            } else {
+                accion = 'Todos los objetivos están cumpliéndose. Mantener la estrategia actual.';
+            }
+            document.getElementById('accion-motos').textContent = accion;
+
+            return (demosPercent + solicitudesPercent + visitasPercent) / 3;
+        }
+
+        // Función para actualizar KPIs de Servicio
+        function updateServicioKPIs(datos) {
+            if (!datos || datos.length === 0) return;
+
+            const lastMonth = datos[datos.length - 1];
+            
+            const servicios = parseInt(lastMonth.servicios || 0);
+            const serviciosTarget = 70;
+            const serviciosPercent = servicios / serviciosTarget * 100;
+            
+            const satisfaccion = parseFloat(lastMonth.satisfaccion || 0);
+            const satisfaccionTarget = 95;
+            const satisfaccionPercent = satisfaccion / satisfaccionTarget * 100;
+            
+            const resenas = parseInt(lastMonth.resenas || 0);
+            const resenasTarget = 4;
+            const resenasPercent = resenas / resenasTarget * 100;
+
+            // Actualizar valores y barras de progreso
+            document.getElementById('servicio-realizados').textContent = servicios;
+            document.getElementById('servicio-realizados-meta').textContent = serviciosTarget;
+            document.getElementById('servicio-realizados-bar').style.width = `${Math.min(serviciosPercent, 100)}%`;
+
+            document.getElementById('servicio-satisfaccion').textContent = satisfaccion + '%';
+            document.getElementById('servicio-satisfaccion-meta').textContent = satisfaccionTarget + '%';
+            document.getElementById('servicio-satisfaccion-bar').style.width = `${Math.min(satisfaccionPercent, 100)}%`;
+
+            document.getElementById('servicio-resenas').textContent = resenas;
+            document.getElementById('servicio-resenas-meta').textContent = resenasTarget;
+            document.getElementById('servicio-resenas-bar').style.width = `${Math.min(resenasPercent, 100)}%`;
+
+            // Actualizar KPI general
+            document.getElementById('kpi-satisfaccion').textContent = satisfaccion + '%';
+            const satisfaccionTargetText = satisfaccion >= satisfaccionTarget ? '+' + (satisfaccion - satisfaccionTarget).toFixed(1) : (satisfaccion - satisfaccionTarget).toFixed(1);
+            document.getElementById('kpi-satisfaccion-target').textContent = `${satisfaccionTargetText}% vs objetivo`;
+            document.getElementById('kpi-satisfaccion-target').className = `metric-target ${satisfaccion >= satisfaccionTarget ? 'positive' : 'negative'}`;
+            document.getElementById('kpi-satisfaccion-progress').style.width = `${Math.min(satisfaccionPercent, 100)}%`;
+
+            // Actualizar tabla de datos
+            const tbody = document.getElementById('servicioTable').querySelector('tbody');
+            tbody.innerHTML = '';
+            datos.forEach(d => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${d.mes}</td>
+                    <td>${d.servicios}</td>
+                    <td>${d.satisfaccion}%</td>
+                    <td>${d.resenas}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            // Generar recomendación
+            let accion = '';
+            if (satisfaccion < satisfaccionTarget) {
+                accion = 'Reforzar la capacitación del equipo en CTA (Calidad, Tiempo, Atención) para mejorar niveles de satisfacción.';
+            } else if (resenas < resenasTarget) {
+                accion = 'Implementar estrategia para incentivar reseñas de 5 estrellas en Google.';
+            } else if (servicios < serviciosTarget) {
+                accion = 'Aumentar la captación de clientes de servicio a través de promociones especiales.';
+            } else {
+                accion = 'El área de servicio está alcanzando todos sus objetivos. Mantener la estrategia actual.';
+            }
+            document.getElementById('accion-servicio').textContent = accion;
+
+            return (serviciosPercent + satisfaccionPercent + resenasPercent) / 3;
+        }
+
+        // Función para actualizar KPIs de Café-Bar
+        function updateCafeKPIs(datos) {
+            if (!datos || datos.length === 0) return;
+
+            const lastMonth = datos[datos.length - 1];
+            
+            const visitas = parseInt(lastMonth.visitas || 0);
+            const visitasTarget = 700;
+            const visitasPercent = visitas / visitasTarget * 100;
+            
+            const ticket = parseFloat(lastMonth.ticket || 0);
+            const ticketTarget = 185;
+            const ticketPercent = ticket / ticketTarget * 100;
+            
+            const resenas = parseInt(lastMonth.resenas || 0);
+            const resenasTarget = 4;
+            const resenasPercent = resenas / resenasTarget * 100;
+
+            // Actualizar valores y barras de progreso
+            document.getElementById('cafe-visitas').textContent = visitas;
+            document.getElementById('cafe-visitas-meta').textContent = visitasTarget;
+            document.getElementById('cafe-visitas-bar').style.width = `${Math.min(visitasPercent, 100)}%`;
+
+            document.getElementById('cafe-ticket').textContent = '$' + ticket;
+            document.getElementById('cafe-ticket-meta').textContent = '$' + ticketTarget;
+            document.getElementById('cafe-ticket-bar').style.width = `${Math.min(ticketPercent, 100)}%`;
+
+            document.getElementById('cafe-resenas').textContent = resenas;
+            document.getElementById('cafe-resenas-meta').textContent = resenasTarget;
+            document.getElementById('cafe-resenas-bar').style.width = `${Math.min(resenasPercent, 100)}%`;
+
+            // Actualizar KPI general
+            document.getElementById('kpi-cafe-visitas').textContent = visitas;
+            const visitasTargetText = visitas >= visitasTarget ? '+' + (visitas - visitasTarget) : (visitas - visitasTarget);
+            document.getElementById('kpi-cafe-target').textContent = `${visitasTargetText} vs objetivo`;
+            document.getElementById('kpi-cafe-target').className = `metric-target ${visitas >= visitasTarget ? 'positive' : 'negative'}`;
+            document.getElementById('kpi-cafe-progress').style.width = `${Math.min(visitasPercent, 100)}%`;
+
+            // Actualizar tabla de datos
+            const tbody = document.getElementById('cafeTable').querySelector('tbody');
+            tbody.innerHTML = '';
+            datos.forEach(d => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${d.mes}</td>
+                    <td>${d.visitas}</td>
+                    <td>$${d.ticket}</td>
+                    <td>${d.resenas}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            // Generar recomendación
+            let accion = '';
+            if (visitas < visitasTarget) {
+                accion = 'Implementar promociones especiales para aumentar el número de visitantes.';
+            } else if (ticket < ticketTarget) {
+                accion = 'Mejorar estrategias de upselling para incrementar el ticket promedio.';
+            } else if (resenas < resenasTarget) {
+                accion = 'Desarrollar un plan para incentivar reseñas positivas de clientes satisfechos.';
+            } else {
+                accion = 'Café-Bar está cumpliendo todos sus objetivos. Considerar nuevas experiencias para mantener el interés.';
+            }
+            document.getElementById('accion-cafe').textContent = accion;
+
+            return (visitasPercent + ticketPercent + resenasPercent) / 3;
+        }
+
+        // Función para actualizar KPIs de Marketing
+        function updateMarketingKPIs(datos) {
+            if (!datos || datos.length === 0) return;
+
+            const lastMonth = datos[datos.length - 1];
+            
+            const crecimiento = parseFloat(lastMonth.crecimiento || 0);
+            const crecimientoTarget = 5;
+            const crecimientoPercent = crecimiento / crecimientoTarget * 100;
+            
+            const leads = parseInt(lastMonth.leads || 0);
+            const leadsTarget = 90;
+            const leadsPercent = leads / leadsTarget * 100;
+            
+            const conversion = parseFloat(lastMonth.conversion || 0);
+            const conversionTarget = 2;
+            const conversionPercent = conversion / conversionTarget * 100;
+
+            // Actualizar valores y barras de progreso
+            document.getElementById('marketing-crecimiento').textContent = crecimiento + '%';
+            document.getElementById('marketing-crecimiento-meta').textContent = crecimientoTarget + '%';
+            document.getElementById('marketing-crecimiento-bar').style.width = `${Math.min(crecimientoPercent, 100)}%`;
+
+            document.getElementById('marketing-leads').textContent = leads;
+            document.getElementById('marketing-leads-meta').textContent = leadsTarget;
+            document.getElementById('marketing-leads-bar').style.width = `${Math.min(leadsPercent, 100)}%`;
+
+            document.getElementById('marketing-conversion').textContent = conversion + '%';
+            document.getElementById('marketing-conversion-meta').textContent = conversionTarget + '%';
+            document.getElementById('marketing-conversion-bar').style.width = `${Math.min(conversionPercent, 100)}%`;
+
+            // Actualizar KPI general
+            document.getElementById('kpi-leads').textContent = leads;
+            const leadsTargetText = leads >= leadsTarget ? '+' + (leads - leadsTarget) : (leads - leadsTarget);
+            document.getElementById('kpi-leads-target').textContent = `${leadsTargetText} vs objetivo`;
+            document.getElementById('kpi-leads-target').className = `metric-target ${leads >= leadsTarget ? 'positive' : 'negative'}`;
+            document.getElementById('kpi-leads-progress').style.width = `${Math.min(leadsPercent, 100)}%`;
+
+            // Actualizar tabla de datos
+            const tbody = document.getElementById('marketingTable').querySelector('tbody');
+            tbody.innerHTML = '';
+            datos.forEach(d => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${d.mes}</td>
+                    <td>${d.crecimiento}%</td>
+                    <td>${d.leads}</td>
+                    <td>${d.conversion}%</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            // Generar recomendación
+            let accion = '';
+            if (crecimiento < crecimientoTarget) {
+                accion = 'Invertir en estrategias de crecimiento de audiencia en redes sociales.';
+            } else if (leads < leadsTarget) {
+                accion = 'Optimizar campañas para generar más leads cualificados.';
+            } else if (conversion < conversionTarget) {
+                accion = 'Mejorar el proceso de seguimiento de leads para aumentar la tasa de conversión.';
+            } else {
+                accion = 'Marketing está alcanzando sus objetivos. Reforzar contenido de valor sobre motociclismo seguro.';
+            }
+            document.getElementById('accion-marketing').textContent = accion;
+
+            return (crecimientoPercent + leadsPercent + conversionPercent) / 3;
+        }
+
+        // Función para actualizar KPIs de Eventos
+        function updateEventosKPIs(datos) {
+            if (!datos || datos.length === 0) return;
+
+            const lastMonth = datos[datos.length - 1];
+            
+            const musica = parseInt(lastMonth.musica || 0);
+            const musicaTarget = 4;
+            const musicaPercent = musica / musicaTarget * 100;
+            
+            const comunidad = parseInt(lastMonth.comunidad || 0);
+            const comunidadTarget = 2;
+            const comunidadPercent = comunidad / comunidadTarget * 100;
+            
+            const paga = parseInt(lastMonth.paga || 0);
+            const pagaTarget = 1;
+            const pagaPercent = paga / pagaTarget * 100;
+
+            // Actualizar valores y barras de progreso
+            document.getElementById('eventos-musica').textContent = musica;
+            document.getElementById('eventos-musica-meta').textContent = musicaTarget;
+            document.getElementById('eventos-musica-bar').style.width = `${Math.min(musicaPercent, 100)}%`;
+
+            document.getElementById('eventos-comunidad').textContent = comunidad;
+            document.getElementById('eventos-comunidad-meta').textContent = comunidadTarget;
+            document.getElementById('eventos-comunidad-bar').style.width = `${Math.min(comunidadPercent, 100)}%`;
+
+            document.getElementById('eventos-paga').textContent = paga;
+            document.getElementById('eventos-paga-meta').textContent = pagaTarget;
+            document.getElementById('eventos-paga-bar').style.width = `${Math.min(pagaPercent, 100)}%`;
+
+            // Actualizar KPI general
+            const totalEventos = musica + comunidad + paga;
+            const totalTarget = musicaTarget + comunidadTarget + pagaTarget;
+            const totalPercent = totalEventos / totalTarget * 100;
+            
+            document.getElementById('kpi-eventos').textContent = totalEventos;
+            const eventosTargetText = totalEventos >= totalTarget ? '+' + (totalEventos - totalTarget) : (totalEventos - totalTarget);
+            document.getElementById('kpi-eventos-target').textContent = `${eventosTargetText} vs objetivo`;
+            document.getElementById('kpi-eventos-target').className = `metric-target ${totalEventos >= totalTarget ? 'positive' : 'negative'}`;
+            document.getElementById('kpi-eventos-progress').style.width = `${Math.min(totalPercent, 100)}%`;
+
+            // Actualizar tabla de datos
+            const tbody = document.getElementById('eventosTable').querySelector('tbody');
+            tbody.innerHTML = '';
+            datos.forEach(d => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${d.mes}</td>
+                    <td>${d.musica}</td>
+                    <td>${d.comunidad}</td>
+                    <td>${d.paga}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            // Generar recomendación
+            let accion = '';
+            if (musica < musicaTarget) {
+                accion = 'Programar más eventos de música en vivo para alcanzar la cadencia mensual objetivo.';
+            } else if (comunidad < comunidadTarget) {
+                accion = 'Organizar eventos adicionales de comunidad para fomentar la cercanía con los clientes.';
+            } else if (paga < pagaTarget) {
+                accion = 'Planificar el próximo evento de paga con suficiente anticipación para garantizar su éxito.';
+            } else {
+                accion = 'Todos los objetivos de eventos están cumpliéndose. Considerar diversificar los tipos de eventos.';
+            }
+            document.getElementById('accion-eventos').textContent = accion;
+
+            return totalPercent;
+        }
+
+        // Función para actualizar gráficos
+        function updateCharts() {
+            // Actualizar gráfico de motos
+            if (motosChart && datosMotos && datosMotos.length > 0) {
+                motosChart.data.labels = datosMotos.map(d => d.mes);
+                motosChart.data.datasets[0].data = datosMotos.map(d => d.demos);
+                motosChart.data.datasets[1].data = datosMotos.map(d => d.solicitudes);
+                motosChart.data.datasets[2].data = datosMotos.map(d => d.visitas);
+                motosChart.update();
+            }
+
+            // Actualizar gráfico de servicio
+            if (servicioChart && datosServicio && datosServicio.length > 0) {
+                servicioChart.data.labels = datosServicio.map(d => d.mes);
+                servicioChart.data.datasets[0].data = datosServicio.map(d => d.servicios);
+                servicioChart.data.datasets[1].data = datosServicio.map(d => d.satisfaccion);
+                servicioChart.data.datasets[2].data = datosServicio.map(d => d.resenas);
+                servicioChart.update();
+            }
+
+            // Actualizar gráfico de café-bar
+            if (cafeChart && datosCafe && datosCafe.length > 0) {
+                cafeChart.data.labels = datosCafe.map(d => d.mes);
+                cafeChart.data.datasets[0].data = datosCafe.map(d => d.visitas);
+                cafeChart.data.datasets[1].data = datosCafe.map(d => d.ticket);
+                cafeChart.data.datasets[2].data = datosCafe.map(d => d.resenas);
+                cafeChart.update();
+            }
+
+            // Actualizar gráfico de marketing
+            if (marketingChart && datosMarketing && datosMarketing.length > 0) {
+                marketingChart.data.labels = datosMarketing.map(d => d.mes);
+                marketingChart.data.datasets[0].data = datosMarketing.map(d => d.crecimiento);
+                marketingChart.data.datasets[1].data = datosMarketing.map(d => d.leads);
+                marketingChart.data.datasets[2].data = datosMarketing.map(d => d.conversion);
+                marketingChart.update();
+            }
+
+            // Actualizar gráfico de eventos
+            if (eventosChart && datosEventos && datosEventos.length > 0) {
+                eventosChart.data.labels = datosEventos.map(d => d.mes);
+                eventosChart.data.datasets[0].data = datosEventos.map(d => d.musica);
+                eventosChart.data.datasets[1].data = datosEventos.map(d => d.comunidad);
+                eventosChart.data.datasets[2].data = datosEventos.map(d => d.paga);
+                eventosChart.update();
+            }
+
+            // Actualizar gráfico de KPIs generales
+            if (kpisGeneralesChart && datosKPIs.length > 0) {
+                // Meses para el eje X
+                const meses = [...new Set(datosMotos.map(d => d.mes))];
+                
+                // Calcular porcentajes de cumplimiento para cada área
+                const cumplimientoMotos = [];
+                const cumplimientoServicio = [];
+                const cumplimientoCafe = [];
+                const cumplimientoMarketing = [];
+                const cumplimientoEventos = [];
+                
+                meses.forEach(mes => {
+                    // Datos de Motos para ese mes
+                    const datosMesMoto = datosMotos.find(d => d.mes === mes);
+                    if (datosMesMoto) {
+                        const demos = parseInt(datosMesMoto.demos || 0);
+                        const solicitudes = parseInt(datosMesMoto.solicitudes || 0);
+                        const visitas = parseInt(datosMesMoto.visitas || 0);
+                        const cumplimiento = ((demos / 40) + (solicitudes / 20) + (visitas / 60)) / 3 * 100;
+                        cumplimientoMotos.push(Math.min(cumplimiento, 100));
+                    } else {
+                        cumplimientoMotos.push(0);
+                    }
+                    
+                    // Datos de Servicio para ese mes
+                    const datosMesServicio = datosServicio.find(d => d.mes === mes);
+                    if (datosMesServicio) {
+                        const servicios = parseInt(datosMesServicio.servicios || 0);
+                        const satisfaccion = parseFloat(datosMesServicio.satisfaccion || 0);
+                        const resenas = parseInt(datosMesServicio.resenas || 0);
+                        const cumplimiento = ((servicios / 70) + (satisfaccion / 95) + (resenas / 4)) / 3 * 100;
+                        cumplimientoServicio.push(Math.min(cumplimiento, 100));
+                    } else {
+                        cumplimientoServicio.push(0);
+                    }
+                    
+                    // Datos de Café-Bar para ese mes
+                    const datosMesCafe = datosCafe.find(d => d.mes === mes);
+                    if (datosMesCafe) {
+                        const visitas = parseInt(datosMesCafe.visitas || 0);
+                        const ticket = parseFloat(datosMesCafe.ticket || 0);
+                        const resenas = parseInt(datosMesCafe.resenas || 0);
+                        const cumplimiento = ((visitas / 700) + (ticket / 185) + (resenas / 4)) / 3 * 100;
+                        cumplimientoCafe.push(Math.min(cumplimiento, 100));
+                    } else {
+                        cumplimientoCafe.push(0);
+                    }
+                    
+                    // Datos de Marketing para ese mes
+                    const datosMesMarketing = datosMarketing.find(d => d.mes === mes);
+                    if (datosMesMarketing) {
+                        const crecimiento = parseFloat(datosMesMarketing.crecimiento || 0);
+                        const leads = parseInt(datosMesMarketing.leads || 0);
+                        const conversion = parseFloat(datosMesMarketing.conversion || 0);
+                        const cumplimiento = ((crecimiento / 5) + (leads / 90) + (conversion / 2)) / 3 * 100;
+                        cumplimientoMarketing.push(Math.min(cumplimiento, 100));
+                    } else {
+                        cumplimientoMarketing.push(0);
+                    }
+                    
+                    // Datos de Eventos para ese mes
+                    const datosMesEventos = datosEventos.find(d => d.mes === mes);
+                    if (datosMesEventos) {
+                        const musica = parseInt(datosMesEventos.musica || 0);
+                        const comunidad = parseInt(datosMesEventos.comunidad || 0);
+                        const paga = parseInt(datosMesEventos.paga || 0);
+                        const totalEventos = musica + comunidad + paga;
+                        const totalTarget = 4 + 2 + 1;
+                        const cumplimiento = (totalEventos / totalTarget) * 100;
+                        cumplimientoEventos.push(Math.min(cumplimiento, 100));
+                    } else {
+                        cumplimientoEventos.push(0);
+                    }
+                });
+                
+                kpisGeneralesChart.data.labels = meses;
+                kpisGeneralesChart.data.datasets[0].data = cumplimientoMotos;
+                kpisGeneralesChart.data.datasets[1].data = cumplimientoServicio;
+                kpisGeneralesChart.data.datasets[2].data = cumplimientoCafe;
+                kpisGeneralesChart.data.datasets[3].data = cumplimientoMarketing;
+                kpisGeneralesChart.data.datasets[4].data = cumplimientoEventos;
+                kpisGeneralesChart.update();
+            }
+        }
+
+        // Función para actualizar el gráfico Radar de KPIs
+        function updateKPIsRadarChart(motosPercent, servicioPercent, cafePercent, marketingPercent, eventosPercent) {
+            if (!kpisRadarChart) return;
+            
+            kpisRadarChart.data.datasets[0].data = [
+                Math.min(motosPercent, 100),
+                Math.min(servicioPercent, 100),
+                Math.min(cafePercent, 100),
+                Math.min(marketingPercent, 100),
+                Math.min(eventosPercent, 100)
+            ];
+            kpisRadarChart.update();
+        }
+
+        // Función para inicializar Google Sheets API
+        function initGoogleSheetsAPI() {
+            toggleLoading(true);
+            gapi.load('client', async () => {
+                try {
+                    await gapi.client.init({
+                        apiKey: API_KEY,
+                        discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
+                    });
+                    console.log('API de Google Sheets inicializada correctamente');
+                    loadAllData();
+                } catch (error) {
+                    console.error('Error al inicializar la API de Google Sheets:', error);
+                    toggleLoading(false);
+                    alert('Error al inicializar la API de Google Sheets: ' + error.message);
+                }
+            });
+        }
+
+        // Función para procesar datos de hojas
+        function processSheetData(response, headerRow = 0) {
+            if (!response || !response.result || !response.result.values || response.result.values.length <= headerRow) {
+                console.error('Datos de hoja inválidos', response);
+                return [];
+            }
+            
+            const headers = response.result.values[headerRow];
+            const data = [];
+            
+            for (let i = headerRow + 1; i < response.result.values.length; i++) {
+                const row = response.result.values[i];
+                if (row.length === 0) continue;
+                
+                const item = {};
+                headers.forEach((header, index) => {
+                    if (index < row.length) {
+                        item[header.toLowerCase()] = row[index];
+                    } else {
+                        item[header.toLowerCase()] = null;
+                    }
+                });
+                data.push(item);
+            }
+            
+            return data;
+        }
+
+        // Función para cargar todos los datos
+        async function loadAllData() {
+            toggleLoading(true);
+            try {
+                // Cargar datos de Motos
+                const motosResponse = await gapi.client.sheets.spreadsheets.values.get({
+                    spreadsheetId: SHEET_ID,
+                    range: MOTOS_RANGE
+                });
+                datosMotos = processSheetData(motosResponse);
+                
+                // Cargar datos de Servicio
+                const servicioResponse = await gapi.client.sheets.spreadsheets.values.get({
+                    spreadsheetId: SHEET_ID,
+                    range: SERVICIO_RANGE
+                });
+                datosServicio = processSheetData(servicioResponse);
+                
+                // Cargar datos de Café-Bar
+                const cafeResponse = await gapi.client.sheets.spreadsheets.values.get({
+                    spreadsheetId: SHEET_ID,
+                    range: CAFE_RANGE
+                });
+                datosCafe = processSheetData(cafeResponse);
+                
+                // Cargar datos de Marketing
+                const marketingResponse = await gapi.client.sheets.spreadsheets.values.get({
+                    spreadsheetId: SHEET_ID,
+                    range: MARKETING_RANGE
+                });
+                datosMarketing = processSheetData(marketingResponse);
+                
+                // Cargar datos de Eventos
+                const eventosResponse = await gapi.client.sheets.spreadsheets.values.get({
+                    spreadsheetId: SHEET_ID,
+                    range: EVENTOS_RANGE
+                });
+                datosEventos = processSheetData(eventosResponse);
+                
+                // Cargar datos de KPIs Generales
+                const kpisResponse = await gapi.client.sheets.spreadsheets.values.get({
+                    spreadsheetId: SHEET_ID,
+                    range: KPIS_RANGE
+                });
+                datosKPIs = processSheetData(kpisResponse);
+                
+                console.log('Datos cargados correctamente', {
+                    datosMotos,
+                    datosServicio,
+                    datosCafe,
+                    datosMarketing,
+                    datosEventos,
+                    datosKPIs
+                });
+                
+                // Actualizar KPIs y gráficos
+                const motosPercent = updateMotosKPIs(datosMotos);
+                const servicioPercent = updateServicioKPIs(datosServicio);
+                const cafePercent = updateCafeKPIs(datosCafe);
+                const marketingPercent = updateMarketingKPIs(datosMarketing);
+                const eventosPercent = updateEventosKPIs(datosEventos);
+                
+                updateCharts();
+                updateKPIsRadarChart(motosPercent, servicioPercent, cafePercent, marketingPercent, eventosPercent);
+                
+                // Actualizar fecha de actualización
+                document.getElementById('lastUpdated').textContent = `Dashboard actualizado: ${new Date().toLocaleString('es-MX')}`;
+                
+                // Resaltar KPIs que necesitan atención
+                highlightKPIsNeedingAttention();
+                
+            } catch (error) {
+                console.error('Error al cargar los datos:', error);
+                alert('Error al cargar datos de Google Sheets: ' + (error.message || 'Error desconocido'));
+            } finally {
+                toggleLoading(false);
+            }
+        }
+
+        // Función para resaltar KPIs que necesitan atención
+        function highlightKPIsNeedingAttention() {
+            // Obtener el último mes de datos
+            if (!datosMotos || !datosMotos.length) return;
+            
+            const lastMotos = datosMotos[datosMotos.length - 1];
+            const lastServicio = datosServicio[datosServicio.length - 1];
+            const lastCafe = datosCafe[datosCafe.length - 1];
+            const lastMarketing = datosMarketing[datosMarketing.length - 1];
+            const lastEventos = datosEventos[datosEventos.length - 1];
+            
+            // Verificar KPIs de Motos
+            if (parseInt(lastMotos.demos) < 40) {
+                document.getElementById('motos-demos').classList.add('kpi-highlight');
+                document.getElementById('motos-demos').parentElement.classList.add('bg-red-50');
+            }
+            
+            if (parseInt(lastMotos.solicitudes) < 20) {
+                document.getElementById('motos-solicitudes').classList.add('kpi-highlight');
+                document.getElementById('motos-solicitudes').parentElement.classList.add('bg-red-50');
+            }
+            
+            if (parseInt(lastMotos.visitas) < 60) {
+                document.getElementById('motos-visitas').classList.add('kpi-highlight');
+                document.getElementById('motos-visitas').parentElement.classList.add('bg-red-50');
+            }
+            
+            // Verificar KPIs de Servicio
+            if (parseInt(lastServicio.servicios) < 70) {
+                document.getElementById('servicio-realizados').classList.add('kpi-highlight');
+                document.getElementById('servicio-realizados').parentElement.classList.add('bg-red-50');
+            }
+            
+            if (parseFloat(lastServicio.satisfaccion) < 95) {
+                document.getElementById('servicio-satisfaccion').classList.add('kpi-highlight');
+                document.getElementById('servicio-satisfaccion').parentElement.classList.add('bg-red-50');
+            }
+            
+            if (parseInt(lastServicio.resenas) < 4) {
+                document.getElementById('servicio-resenas').classList.add('kpi-highlight');
+                document.getElementById('servicio-resenas').parentElement.classList.add('bg-red-50');
+            }
+            
+            // Verificar KPIs de Café-Bar
+            if (parseInt(lastCafe.visitas) < 700) {
+                document.getElementById('cafe-visitas').classList.add('kpi-highlight');
+                document.getElementById('cafe-visitas').parentElement.classList.add('bg-red-50');
+            }
+            
+            if (parseFloat(lastCafe.ticket) < 185) {
+                document.getElementById('cafe-ticket').classList.add('kpi-highlight');
+                document.getElementById('cafe-ticket').parentElement.classList.add('bg-red-50');
+            }
+            
+            if (parseInt(lastCafe.resenas) < 4) {
+                document.getElementById('cafe-resenas').classList.add('kpi-highlight');
+                document.getElementById('cafe-resenas').parentElement.classList.add('bg-red-50');
+            }
+            
+            // Verificar KPIs de Marketing
+            if (parseFloat(lastMarketing.crecimiento) < 5) {
+                document.getElementById('marketing-crecimiento').classList.add('kpi-highlight');
+                document.getElementById('marketing-crecimiento').parentElement.classList.add('bg-red-50');
+            }
+            
+            if (parseInt(lastMarketing.leads) < 90) {
+                document.getElementById('marketing-leads').classList.add('kpi-highlight');
+                document.getElementById('marketing-leads').parentElement.classList.add('bg-red-50');
+            }
+            
+            if (parseFloat(lastMarketing.conversion) < 2) {
+                document.getElementById('marketing-conversion').classList.add('kpi-highlight');
+                document.getElementById('marketing-conversion').parentElement.classList.add('bg-red-50');
+            }
+            
+            // Verificar KPIs de Eventos
+            if (parseInt(lastEventos.musica) < 4) {
+                document.getElementById('eventos-musica').classList.add('kpi-highlight');
+                document.getElementById('eventos-musica').parentElement.classList.add('bg-red-50');
+            }
+            
+            if (parseInt(lastEventos.comunidad) < 2) {
+                document.getElementById('eventos-comunidad').classList.add('kpi-highlight');
+                document.getElementById('eventos-comunidad').parentElement.classList.add('bg-red-50');
+            }
+            
+            if (parseInt(lastEventos.paga) < 1) {
+                document.getElementById('eventos-paga').classList.add('kpi-highlight');
+                document.getElementById('eventos-paga').parentElement.classList.add('bg-red-50');
+            }
+        }
+
+        // Función para generar datos de demostración (solo si no se pueden cargar datos reales)
+        function generateDemoData() {
+            console.log('Generando datos de demostración para prueba');
+            
+            const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+            
+            // Datos para Motos
+            datosMotos = meses.map((mes, index) => {
+                const rand = Math.random() * 0.3 + 0.85; // Entre 85% y 115% del objetivo
+                return {
+                    mes: mes,
+                    demos: Math.round(40 * rand),
+                    solicitudes: Math.round(20 * rand),
+                    visitas: Math.round(60 * rand)
+                };
+            });
+            
+            // Datos para Servicio
+            datosServicio = meses.map((mes, index) => {
+                const rand = Math.random() * 0.2 + 0.9; // Entre 90% y 110% del objetivo
+                return {
+                    mes: mes,
+                    servicios: Math.round(70 * rand),
+                    satisfaccion: Math.min(100, Math.round(95 * rand * 10) / 10),
+                    resenas: Math.round(4 * rand)
+                };
+            });
+            
+            // Datos para Café-Bar
+            datosCafe = meses.map((mes, index) => {
+                const rand = Math.random() * 0.2 + 0.9; // Entre 90% y 110% del objetivo
+                return {
+                    mes: mes,
+                    visitas: Math.round(700 * rand),
+                    ticket: Math.round(185 * rand),
+                    resenas: Math.round(4 * rand)
+                };
+            });
+            
+            // Datos para Marketing
+            datosMarketing = meses.map((mes, index) => {
+                const rand = Math.random() * 0.4 + 0.8; // Entre 80% y 120% del objetivo
+                return {
+                    mes: mes,
+                    crecimiento: Math.round(5 * rand * 10) / 10,
+                    leads: Math.round(90 * rand),
+                    conversion: Math.round(2 * rand * 10) / 10
+                };
+            });
+            
+            // Datos para Eventos
+            datosEventos = meses.map((mes, index) => {
+                const randM = Math.random() * 0.5 + 0.75; // Entre 75% y 125% del objetivo
+                const randC = Math.random() * 0.5 + 0.75;
+                const randP = Math.random() * 0.5 + 0.75;
+                return {
+                    mes: mes,
+                    musica: Math.round(4 * randM),
+                    comunidad: Math.round(2 * randC),
+                    paga: Math.round(1 * randP)
+                };
+            });
+        }
+
+        // Inicializar las gráficas y pestañas al cargar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            setupTabs();
+            initCharts();
+            
+            // Configurar botón de actualizar
+            document.getElementById('updateBtn').addEventListener('click', function() {
+                initGoogleSheetsAPI();
+            });
+            
+            // Iniciar carga de datos desde Google Sheets
+            initGoogleSheetsAPI();
+            
+            // Si hay algún error en la carga, generar datos de demostración
+            setTimeout(function() {
+                if (datosMotos.length === 0) {
+                    generateDemoData();
+                    const motosPercent = updateMotosKPIs(datosMotos);
+                    const servicioPercent = updateServicioKPIs(datosServicio);
+                    const cafePercent = updateCafeKPIs(datosCafe);
+                    const marketingPercent = updateMarketingKPIs(datosMarketing);
+                    const eventosPercent = updateEventosKPIs(datosEventos);
+                    
+                    updateCharts();
+                    updateKPIsRadarChart(motosPercent, servicioPercent, cafePercent, marketingPercent, eventosPercent);
+                    
+                    document.getElementById('lastUpdated').textContent += ' (Datos de demostración)';
+                }
+            }, 5000); // Esperar 5 segundos para ver si se cargan los datos reales
+        });
+    </script>
+</body>
+</html>
+
+          
