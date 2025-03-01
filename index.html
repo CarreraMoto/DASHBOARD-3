@@ -550,6 +550,18 @@
                             </div>
                             
                             <div class="bg-white p-4 rounded-lg shadow">
+                                <h3 class="text-
+                                    <h3 class="text-sm font-semibold text-gray-500">Crecimiento</h3>
+                                <div class="flex justify-between items-end mt-2">
+                                    <p id="marketing-crecimiento" class="text-2xl font-bold marketing-color">0%</p>
+                                    <p class="text-sm text-gray-500">Meta: <span id="marketing-crecimiento-meta">5%</span></p>
+                                </div>
+                                <div class="progress-bar mt-2">
+                                    <div id="marketing-crecimiento-bar" class="progress-fill marketing-bg" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white p-4 rounded-lg shadow">
                                 <h3 class="text-sm font-semibold text-gray-500">Leads</h3>
                                 <div class="flex justify-between items-end mt-2">
                                     <p id="marketing-leads" class="text-2xl font-bold marketing-color">0</p>
@@ -690,28 +702,24 @@
             </div>
 
             <div class="card">
-                <h2 class="text-xl font-bold text-gray-800 mb-4">Acciones Recomendadas</h2>
-                <div class="space-y-4">
-                    <div class="action-card" style="border-left-color: #3b82f6; background-color: #eff6ff;">
-                        <h3 class="font-bold" style="color: #1e40af;">Motos Nuevas</h3>
-                        <p id="accion-motos" style="color: #1e3a8a;">Acción recomendada para Motos Nuevas</p>
-                    </div>
-                    <div class="action-card" style="border-left-color: #10b981; background-color: #ecfdf5;">
-                        <h3 class="font-bold" style="color: #065f46;">Servicio</h3>
-                        <p id="accion-servicio" style="color: #064e3b;">Acción recomendada para Servicio</p>
-                    </div>
-                    <div class="action-card" style="border-left-color: #f59e0b; background-color: #fffbeb;">
-                        <h3 class="font-bold" style="color: #92400e;">Café-Bar</h3>
-                        <p id="accion-cafe" style="color: #78350f;">Acción recomendada para Café-Bar</p>
-                    </div>
-                    <div class="action-card" style="border-left-color: #8b5cf6; background-color: #f5f3ff;">
-                        <h3 class="font-bold" style="color: #5b21b6;">Marketing</h3>
-                        <p id="accion-marketing" style="color: #4c1d95;">Acción recomendada para Marketing</p>
-                    </div>
-                    <div class="action-card" style="border-left-color: #ec4899; background-color: #fdf2f8;">
-                        <h3 class="font-bold" style="color: #9d174d;">Eventos</h3>
-                        <p id="accion-eventos" style="color: #831843;">Acción recomendada para Eventos</p>
-                    </div>
+                <h2 class="text-xl font-bold text-gray-800 mb-4">Reunión de los miércoles</h2>
+                <div class="p-4 bg-gray-50 rounded-lg">
+                    <p class="text-lg font-bold mb-3">📅 Nos reuniremos todos los miércoles de 10:45 a 11:20</p>
+                    
+                    <p class="font-bold mt-4">👉 ¿Por qué?</p>
+                    <ul class="list-disc ml-6 mb-4">
+                        <li>Seguimiento constante para ajustar estrategias</li>
+                        <li>Celebrar avances y detectar bloqueos</li>
+                        <li>Mantenernos alineados como equipo</li>
+                    </ul>
+                    
+                    <p class="font-bold">Agenda para la reunión (35 min):</p>
+                    <ul class="list-none space-y-2 mt-2">
+                        <li>⏳ 5 min – Intro.</li>
+                        <li>⏳ 15 min – Exposición de avance, bloqueo y plan.</li>
+                        <li>⏳ 10 min – Espacio abierto para recomendaciones y colaboración.</li>
+                        <li>⏳ 5 min – Frase de la semana.</li>
+                    </ul>
                 </div>
             </div>
         </div>
@@ -1233,11 +1241,38 @@
             return data;
         }
 
+        // Función para obtener el índice del mes actual en los datos
+        function getCurrentMonthIndex(datos) {
+            if (!datos || datos.length === 0) return -1;
+            
+            const currentDate = new Date();
+            const currentMonth = currentDate.getMonth(); // 0-11 (enero-diciembre)
+            
+            // Mapeo de nombres de mes en español a índices
+            const monthMapping = {
+                'ene': 0, 'feb': 1, 'mar': 2, 'abr': 3, 'may': 4, 'jun': 5,
+                'jul': 6, 'ago': 7, 'sep': 8, 'oct': 9, 'nov': 10, 'dic': 11
+            };
+            
+            // Buscar el índice del mes actual en los datos
+            for (let i = 0; i < datos.length; i++) {
+                const monthName = datos[i].mes.toLowerCase().trim();
+                if (monthMapping[monthName] === currentMonth) {
+                    return i;
+                }
+            }
+            
+            // Si no encontramos el mes actual, devolver el último mes disponible
+            return datos.length - 1;
+        }
+
         // Función para actualizar KPIs de Motos
         function updateMotosKPIs(datos) {
             if (!datos || datos.length === 0) return 0;
 
-            const lastMonth = datos[datos.length - 1];
+            // Obtener el mes actual en lugar del último mes
+            const currentMonthIndex = getCurrentMonthIndex(datos);
+            const lastMonth = datos[currentMonthIndex >= 0 ? currentMonthIndex : datos.length - 1];
             
             const demos = parseInt(lastMonth.demos || 0);
             const demosTarget = 40;
@@ -1256,6 +1291,7 @@
             document.getElementById('motos-demos-meta').textContent = demosTarget;
             document.getElementById('motos-demos-bar').style.width = `${Math.min(demosPercent, 100)}%`;
 
+            document.getElementById('motos-solicitudes').textContent = solicitudes;
             document.getElementById('motos-solicitudes').textContent = solicitudes;
             document.getElementById('motos-solicitudes-meta').textContent = solicitudesTarget;
             document.getElementById('motos-solicitudes-bar').style.width = `${Math.min(solicitudesPercent, 100)}%`;
@@ -1285,19 +1321,6 @@
                 tbody.appendChild(row);
             });
 
-            // Generar recomendación
-            let accion = '';
-            if (demos < demosTarget) {
-                accion = 'Incrementar actividades de demostración para alcanzar el objetivo mensual.';
-            } else if (solicitudes < solicitudesTarget) {
-                accion = 'Mejorar el proceso de conversión de demos a solicitudes autorizadas.';
-            } else if (visitas < visitasTarget) {
-                accion = 'Aumentar el seguimiento a clientes potenciales para incrementar visitas contables.';
-            } else {
-                accion = 'Todos los objetivos están cumpliéndose. Mantener la estrategia actual.';
-            }
-            document.getElementById('accion-motos').textContent = accion;
-
             return (demosPercent + solicitudesPercent + visitasPercent) / 3;
         }
 
@@ -1305,7 +1328,9 @@
         function updateServicioKPIs(datos) {
             if (!datos || datos.length === 0) return 0;
 
-            const lastMonth = datos[datos.length - 1];
+            // Obtener el mes actual en lugar del último mes
+            const currentMonthIndex = getCurrentMonthIndex(datos);
+            const lastMonth = datos[currentMonthIndex >= 0 ? currentMonthIndex : datos.length - 1];
             
             const servicios = parseInt(lastMonth.servicios || 0);
             const serviciosTarget = 70;
@@ -1353,19 +1378,6 @@
                 tbody.appendChild(row);
             });
 
-            // Generar recomendación
-            let accion = '';
-            if (satisfaccion < satisfaccionTarget) {
-                accion = 'Reforzar la capacitación del equipo en CTA (Calidad, Tiempo, Atención) para mejorar niveles de satisfacción.';
-            } else if (resenas < resenasTarget) {
-                accion = 'Implementar estrategia para incentivar reseñas de 5 estrellas en Google.';
-            } else if (servicios < serviciosTarget) {
-                accion = 'Aumentar la captación de clientes de servicio a través de promociones especiales.';
-            } else {
-                accion = 'El área de servicio está alcanzando todos sus objetivos. Mantener la estrategia actual.';
-            }
-            document.getElementById('accion-servicio').textContent = accion;
-
             return (serviciosPercent + satisfaccionPercent + resenasPercent) / 3;
         }
 
@@ -1373,7 +1385,9 @@
         function updateCafeKPIs(datos) {
             if (!datos || datos.length === 0) return 0;
 
-            const lastMonth = datos[datos.length - 1];
+            // Obtener el mes actual en lugar del último mes
+            const currentMonthIndex = getCurrentMonthIndex(datos);
+            const lastMonth = datos[currentMonthIndex >= 0 ? currentMonthIndex : datos.length - 1];
             
             const visitas = parseInt(lastMonth.visitas || 0);
             const visitasTarget = 700;
@@ -1421,19 +1435,6 @@
                 tbody.appendChild(row);
             });
 
-            // Generar recomendación
-            let accion = '';
-            if (visitas < visitasTarget) {
-                accion = 'Implementar promociones especiales para aumentar el número de visitantes.';
-            } else if (ticket < ticketTarget) {
-                accion = 'Mejorar estrategias de upselling para incrementar el ticket promedio.';
-            } else if (resenas < resenasTarget) {
-                accion = 'Desarrollar un plan para incentivar reseñas positivas de clientes satisfechos.';
-            } else {
-                accion = 'Café-Bar está cumpliendo todos sus objetivos. Considerar nuevas experiencias para mantener el interés.';
-            }
-            document.getElementById('accion-cafe').textContent = accion;
-
             return (visitasPercent + ticketPercent + resenasPercent) / 3;
         }
 
@@ -1441,7 +1442,9 @@
         function updateMarketingKPIs(datos) {
             if (!datos || datos.length === 0) return 0;
 
-            const lastMonth = datos[datos.length - 1];
+            // Obtener el mes actual en lugar del último mes
+            const currentMonthIndex = getCurrentMonthIndex(datos);
+            const lastMonth = datos[currentMonthIndex >= 0 ? currentMonthIndex : datos.length - 1];
             
             const crecimiento = parseFloat(lastMonth.crecimiento || 0);
             const crecimientoTarget = 5;
@@ -1489,19 +1492,6 @@
                 tbody.appendChild(row);
             });
 
-            // Generar recomendación
-            let accion = '';
-            if (crecimiento < crecimientoTarget) {
-                accion = 'Invertir en estrategias de crecimiento de audiencia en redes sociales.';
-            } else if (leads < leadsTarget) {
-                accion = 'Optimizar campañas para generar más leads cualificados.';
-            } else if (conversion < conversionTarget) {
-                accion = 'Mejorar el proceso de seguimiento de leads para aumentar la tasa de conversión.';
-            } else {
-                accion = 'Marketing está alcanzando sus objetivos. Reforzar contenido de valor sobre motociclismo seguro.';
-            }
-            document.getElementById('accion-marketing').textContent = accion;
-
             return (crecimientoPercent + leadsPercent + conversionPercent) / 3;
         }
 
@@ -1509,7 +1499,9 @@
         function updateEventosKPIs(datos) {
             if (!datos || datos.length === 0) return 0;
 
-            const lastMonth = datos[datos.length - 1];
+            // Obtener el mes actual en lugar del último mes
+            const currentMonthIndex = getCurrentMonthIndex(datos);
+            const lastMonth = datos[currentMonthIndex >= 0 ? currentMonthIndex : datos.length - 1];
             
             const musica = parseInt(lastMonth.musica || 0);
             const musicaTarget = 4;
@@ -1560,19 +1552,6 @@
                 `;
                 tbody.appendChild(row);
             });
-
-            // Generar recomendación
-            let accion = '';
-            if (musica < musicaTarget) {
-                accion = 'Programar más eventos de música en vivo para alcanzar la cadencia mensual objetivo.';
-            } else if (comunidad < comunidadTarget) {
-                accion = 'Organizar eventos adicionales de comunidad para fomentar la cercanía con los clientes.';
-            } else if (paga < pagaTarget) {
-                accion = 'Planificar el próximo evento de paga con suficiente anticipación para garantizar su éxito.';
-            } else {
-                accion = 'Todos los objetivos de eventos están cumpliéndose. Considerar diversificar los tipos de eventos.';
-            }
-            document.getElementById('accion-eventos').textContent = accion;
 
             return totalPercent;
         }
@@ -1726,14 +1705,20 @@
 
         // Función para resaltar KPIs que necesitan atención
         function highlightKPIsNeedingAttention() {
-            // Obtener el último mes de datos
+            // Obtener el mes actual de datos
             if (!datosMotos || !datosMotos.length) return;
             
-            const lastMotos = datosMotos[datosMotos.length - 1];
-            const lastServicio = datosServicio[datosServicio.length - 1];
-            const lastCafe = datosCafe[datosCafe.length - 1];
-            const lastMarketing = datosMarketing[datosMarketing.length - 1];
-            const lastEventos = datosEventos[datosEventos.length - 1];
+            const currentMotosIndex = getCurrentMonthIndex(datosMotos);
+            const currentServicioIndex = getCurrentMonthIndex(datosServicio);
+            const currentCafeIndex = getCurrentMonthIndex(datosCafe);
+            const currentMarketingIndex = getCurrentMonthIndex(datosMarketing);
+            const currentEventosIndex = getCurrentMonthIndex(datosEventos);
+            
+            const lastMotos = datosMotos[currentMotosIndex >= 0 ? currentMotosIndex : datosMotos.length - 1];
+            const lastServicio = datosServicio[currentServicioIndex >= 0 ? currentServicioIndex : datosServicio.length - 1];
+            const lastCafe = datosCafe[currentCafeIndex >= 0 ? currentCafeIndex : datosCafe.length - 1];
+            const lastMarketing = datosMarketing[currentMarketingIndex >= 0 ? currentMarketingIndex : datosMarketing.length - 1];
+            const lastEventos = datosEventos[currentEventosIndex >= 0 ? currentEventosIndex : datosEventos.length - 1];
             
             // Verificar KPIs de Motos
             if (parseInt(lastMotos.demos) < 40) {
@@ -1857,6 +1842,7 @@
                 if (!marketingResponse.ok) {
                     throw new Error(`Error al cargar datos de Marketing: ${marketingResponse.status}`);
                 }
+                }
                 const marketingData = await marketingResponse.json();
                 datosMarketing = processSheetData(marketingData);
                 
@@ -1901,8 +1887,11 @@
                 updateCharts();
                 updateKPIsRadarChart(motosPercent, servicioPercent, cafePercent, marketingPercent, eventosPercent);
                 
-                // Actualizar fecha de actualización
-                document.getElementById('lastUpdated').textContent = `Dashboard actualizado: ${new Date().toLocaleString('es-MX')}`;
+                // Actualizar fecha de actualización y mes actual
+                const currentDate = new Date();
+                const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                const currentMonthName = months[currentDate.getMonth()];
+                document.getElementById('lastUpdated').textContent = `Dashboard actualizado: ${new Date().toLocaleString('es-MX')} (Mostrando datos de ${currentMonthName})`;
                 
                 // Resaltar KPIs que necesitan atención
                 highlightKPIsNeedingAttention();
@@ -1922,7 +1911,10 @@
                 updateCharts();
                 updateKPIsRadarChart(motosPercent, servicioPercent, cafePercent, marketingPercent, eventosPercent);
                 
-                document.getElementById('lastUpdated').textContent = `Dashboard actualizado: ${new Date().toLocaleString('es-MX')} (Datos de demostración)`;
+                const currentDate = new Date();
+                const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                const currentMonthName = months[currentDate.getMonth()];
+                document.getElementById('lastUpdated').textContent = `Dashboard actualizado: ${new Date().toLocaleString('es-MX')} (Datos de demostración para ${currentMonthName})`;
             } finally {
                 toggleLoading(false);
             }
@@ -2020,7 +2012,10 @@
                     updateCharts();
                     updateKPIsRadarChart(motosPercent, servicioPercent, cafePercent, marketingPercent, eventosPercent);
                     
-                    document.getElementById('lastUpdated').textContent = `Dashboard actualizado: ${new Date().toLocaleString('es-MX')} (Datos de demostración)`;
+                    const currentDate = new Date();
+                    const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                    const currentMonthName = months[currentDate.getMonth()];
+                    document.getElementById('lastUpdated').textContent = `Dashboard actualizado: ${new Date().toLocaleString('es-MX')} (Datos de demostración para ${currentMonthName})`;
                 }
             }, 8000); // Esperar 8 segundos para ver si se cargan los datos reales
         });
