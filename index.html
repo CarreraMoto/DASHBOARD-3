@@ -1842,7 +1842,6 @@
                 if (!marketingResponse.ok) {
                     throw new Error(`Error al cargar datos de Marketing: ${marketingResponse.status}`);
                 }
-                }
                 const marketingData = await marketingResponse.json();
                 datosMarketing = processSheetData(marketingData);
                 
